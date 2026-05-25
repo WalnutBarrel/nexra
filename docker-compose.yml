@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: nexra_admin
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: nexra_intelligence
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: .
+      target: backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://nexra_admin:securepassword@db:5432/nexra_intelligence
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build:
+      context: .
+      target: backend
+    command: ["rq", "worker", "high", "default", "low", "--url", "redis://redis:6379/0"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://nexra_admin:securepassword@db:5432/nexra_intelligence
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  web:
+    build:
+      context: .
+      target: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000/api/v1
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
