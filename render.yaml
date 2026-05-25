@@ -4,9 +4,9 @@ services:
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
-    # Hacky but effective: We start the RQ worker in the background, then start the web server in the foreground, 
-    # all inside Render's single free container.
-    startCommand: "rq worker high default low --url $REDIS_URL & uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+    # We remove the RQ worker because we are using an in-memory mock queue, 
+    # and a real RQ worker will crash if it can't connect to a real Redis server.
+    startCommand: "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
