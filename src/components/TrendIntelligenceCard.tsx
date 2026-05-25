@@ -1,4 +1,4 @@
-import { TrendingUp, Activity, Users, MessageSquare, Zap, Github, Star } from "lucide-react";
+import { TrendingUp, Activity, Users, MessageSquare, Zap, GitBranch, Star } from "lucide-react";
 
 interface TrendIntelligenceCardProps {
   topic: string;
@@ -38,7 +38,7 @@ export function TrendIntelligenceCard({
         <div className="flex items-center gap-2">
           {has_github && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 border border-white/10 text-[10px] uppercase font-mono tracking-widest text-foreground/80">
-              <Github className="w-3 h-3" />
+              <GitBranch className="w-3 h-3" />
               Traction
             </div>
           )}
