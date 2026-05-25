@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 import asyncio
 from api.scrapers.feeds.rss import rss_fetcher
 from api.scrapers.feeds.hackernews import hn_fetcher
+from api.ai.intelligence.engine import entity_engine
 
 class PipelineOrchestrator:
     """Coordinates data extraction across all feeds and deduplicates it."""
@@ -25,6 +26,11 @@ class PipelineOrchestrator:
             if article["id"] not in self.seen_ids:
                 self.seen_ids.add(article["id"])
                 new_articles.append(article)
+                
+        # Send new articles to the Entity Intelligence Engine for background extraction
+        if new_articles:
+            # We fire this off asynchronously using create_task so it doesn't block ingestion
+            asyncio.create_task(asyncio.to_thread(entity_engine.extract_and_store_entities, new_articles))
                 
         # Maintain a rolling buffer of the last 100 items for the UI
         self.intelligence_buffer = new_articles + self.intelligence_buffer

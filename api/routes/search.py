@@ -15,6 +15,7 @@ class SearchResponse(BaseModel):
     results_count: int
     news_results: List[dict]
     website_results: List[dict]
+    trend_results: List[dict]
     intent: str
 
 def classify_intent(query: str) -> str:
@@ -27,7 +28,7 @@ def classify_intent(query: str) -> str:
         return "DOMAIN_SCAN"
         
     # Trend Intent
-    if "trend" in q_lower or "accelerat" in q_lower or "emerg" in q_lower:
+    if "trend" in q_lower or "accelerat" in q_lower or "emerg" in q_lower or "traction" in q_lower or "tooling" in q_lower:
         return "TREND_ANALYSIS"
         
     return "NEWS_INTELLIGENCE"
@@ -37,6 +38,7 @@ async def perform_search(q: str):
     intent = classify_intent(q)
     news = []
     websites = []
+    trends = []
     
     # 1. DOMAIN SCAN INTENT
     if intent == "DOMAIN_SCAN":
@@ -65,18 +67,6 @@ async def perform_search(q: str):
             recent = await orchestrator.ingest_live_feeds()
             
         trends = trend_engine.compute_trends(recent)
-        
-        # Format trends as news cards for the UI
-        for t in trends:
-            news.append({
-                "title": f"Trend Alert: {t['topic']}",
-                "source": "Nexra AI Trend Synthesis",
-                "timestamp": "Live",
-                "summary": f"Our intelligence engine detects rapid acceleration in {t['topic']}. Cross-source velocity score is {t['score']}/100. Mention trajectory is trending {t['trend']}.",
-                "sentiment": "neutral",
-                "credibilityScore": 99,
-                "tags": [t["category"], "Emerging Trend"]
-            })
             
     # 3. STANDARD NEWS INTELLIGENCE INTENT
     else:
@@ -96,8 +86,9 @@ async def perform_search(q: str):
     return SearchResponse(
         query=q,
         status="completed",
-        results_count=len(news) + len(websites),
+        results_count=len(news) + len(websites) + len(trends),
         news_results=news,
         website_results=websites,
+        trend_results=trends,
         intent=intent
     )

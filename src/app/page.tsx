@@ -6,6 +6,7 @@ import { TrendingIntelligence } from "@/components/TrendingIntelligence";
 import { LiveIngestionFeed } from "@/components/LiveIngestionFeed";
 import { NewsIntelligenceCard } from "@/components/NewsIntelligenceCard";
 import { WebsiteIntelligenceCard } from "@/components/WebsiteIntelligenceCard";
+import { TrendIntelligenceCard } from "@/components/TrendIntelligenceCard";
 import { SearchingState, NoResultsState } from "@/components/SearchStates";
 import { IntelligenceApi } from "@/lib/api/client";
 
@@ -29,11 +30,13 @@ export default function Home() {
   const [currentQuery, setCurrentQuery] = useState("");
   const [newsData, setNewsData] = useState<any[]>([]);
   const [websiteData, setWebsiteData] = useState<any[]>([]);
+  const [trendData, setTrendData] = useState<any[]>([]);
   const [queryIntent, setQueryIntent] = useState<string>("NEWS_INTELLIGENCE");
 
   const classifyLocalIntent = (q: string) => {
     const domainPattern = /([a-zA-Z0-9-]+\.(com|io|ai|dev|org|net|co|app))|^(https?:\/\/)/i;
     if (domainPattern.test(q)) return "domain";
+    if (q.toLowerCase().includes("trend") || q.toLowerCase().includes("accelerat") || q.toLowerCase().includes("emerg") || q.toLowerCase().includes("tooling")) return "trend";
     return "news";
   };
 
@@ -45,13 +48,12 @@ export default function Home() {
       // Connect to the real intelligence engine endpoint
       const response: any = await IntelligenceApi.search(query);
       
-      // We expect the backend to return { results_count: int, news_results: [], website_results: [] }
-      // For this mock phase, we'll populate the data natively if the API returns empty arrays
       if (query.toLowerCase().includes("none") || query.toLowerCase().includes("error")) {
         setSearchState("no-results");
       } else {
-        setNewsData(response.news_results?.length ? response.news_results : FALLBACK_MOCK_NEWS);
+        setNewsData(response.news_results?.length ? response.news_results : (response.intent === "NEWS_INTELLIGENCE" ? FALLBACK_MOCK_NEWS : []));
         setWebsiteData(response.website_results || []);
+        setTrendData(response.trend_results || []);
         setQueryIntent(response.intent || classifyLocalIntent(query).toUpperCase());
         setSearchState("results");
       }
@@ -99,41 +101,61 @@ export default function Home() {
             </div>
 
             <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8`}>
-              {/* If DOMAIN_SCAN, put Website Intelligence in the massive 8-col primary spot. Otherwise, it goes in 4-col */}
-              <div className={`flex flex-col gap-6 ${queryIntent === 'DOMAIN_SCAN' ? 'lg:col-span-8 lg:order-1' : 'lg:col-span-4 lg:order-2'}`}>
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  Domain Intelligence
-                </div>
-                <div className="flex flex-col gap-4">
-                  {websiteData.length > 0 ? websiteData.map((site, idx) => (
-                    <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150 + 200}ms` }}>
-                      <WebsiteIntelligenceCard {...site} />
-                    </div>
-                  )) : (
-                    <div className="text-sm text-muted-foreground/80 p-5 border border-white/5 rounded-xl bg-[#111111] shadow-inner shadow-black/50">
-                      <div className="flex items-center gap-2 mb-2 font-mono text-[10px] uppercase tracking-widest text-accent/80">
-                        <span className="w-2 h-2 bg-accent/50 rounded-sm animate-pulse"></span>
-                        Passive Inspection Active
+              
+              {queryIntent === 'TREND_ANALYSIS' ? (
+                <div className="lg:col-span-12 flex flex-col gap-6">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                    Empirical Trend Analysis
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {trendData.map((trend, idx) => (
+                      <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150}ms` }}>
+                        <TrendIntelligenceCard {...trend} />
                       </div>
-                      Awaiting structured domain telemetry payload from scanning pipeline...
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className={`flex flex-col gap-6 ${queryIntent === 'DOMAIN_SCAN' ? 'lg:col-span-8 lg:order-1' : 'lg:col-span-4 lg:order-2'}`}>
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      Domain Intelligence
+                    </div>
+                    <div className="flex flex-col gap-4">
+                      {websiteData.length > 0 ? websiteData.map((site, idx) => (
+                        <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150 + 200}ms` }}>
+                          <WebsiteIntelligenceCard {...site} />
+                        </div>
+                      )) : (
+                        <div className="text-sm text-muted-foreground/80 p-5 border border-white/5 rounded-xl bg-[#111111] shadow-inner shadow-black/50">
+                          <div className="flex items-center gap-2 mb-2 font-mono text-[10px] uppercase tracking-widest text-accent/80">
+                            <span className="w-2 h-2 bg-accent/50 rounded-sm animate-pulse"></span>
+                            Passive Inspection Active
+                          </div>
+                          Awaiting structured domain telemetry payload from scanning pipeline...
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-              {/* If DOMAIN_SCAN, put News in the smaller 4-col secondary spot. Otherwise, it goes in 8-col primary */}
-              <div className={`flex flex-col gap-6 ${queryIntent === 'DOMAIN_SCAN' ? 'lg:col-span-4 lg:order-2' : 'lg:col-span-8 lg:order-1'}`}>
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  {queryIntent === 'DOMAIN_SCAN' ? 'Contextual Signals' : 'News & Reports'}
-                </div>
-                <div className={`grid grid-cols-1 ${queryIntent === 'DOMAIN_SCAN' ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-6`}>
-                  {newsData.map((news, idx) => (
-                    <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150}ms` }}>
-                      <NewsIntelligenceCard {...news} />
+                  <div className={`flex flex-col gap-6 ${queryIntent === 'DOMAIN_SCAN' ? 'lg:col-span-4 lg:order-2' : 'lg:col-span-8 lg:order-1'}`}>
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                      {queryIntent === 'DOMAIN_SCAN' ? 'Contextual Signals' : 'News & Reports'}
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div className={`grid grid-cols-1 ${queryIntent === 'DOMAIN_SCAN' ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-6`}>
+                      {newsData.length > 0 ? newsData.map((news, idx) => (
+                        <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150}ms` }}>
+                          <NewsIntelligenceCard {...news} />
+                        </div>
+                      )) : (
+                        <div className="text-sm text-muted-foreground p-4 border border-white/5 rounded-xl bg-[#111111]">
+                          No active contextual signals detected for target infrastructure.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
