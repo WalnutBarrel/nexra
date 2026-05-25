@@ -1,4 +1,4 @@
-import { TrendingUp, Activity, Users, MessageSquare, Zap } from "lucide-react";
+import { TrendingUp, Activity, Users, MessageSquare, Zap, Github, Star } from "lucide-react";
 
 interface TrendIntelligenceCardProps {
   topic: string;
@@ -8,6 +8,8 @@ interface TrendIntelligenceCardProps {
   sources: number;
   mentions: number;
   narrative: string;
+  has_github?: boolean;
+  github_stars?: number;
 }
 
 export function TrendIntelligenceCard({
@@ -17,7 +19,9 @@ export function TrendIntelligenceCard({
   score,
   sources,
   mentions,
-  narrative
+  narrative,
+  has_github,
+  github_stars
 }: TrendIntelligenceCardProps) {
   return (
     <div className="group relative flex flex-col rounded-xl border border-white/5 bg-[#111111] p-6 transition-all duration-300 hover:border-white/10 hover:shadow-lg hover:shadow-black/60 font-sans">
@@ -32,6 +36,12 @@ export function TrendIntelligenceCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {has_github && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 border border-white/10 text-[10px] uppercase font-mono tracking-widest text-foreground/80">
+              <Github className="w-3 h-3" />
+              Traction
+            </div>
+          )}
           <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-accent/5 border border-accent/20 text-[10px] uppercase font-mono tracking-widest text-accent/80">
             <Zap className="w-3 h-3" />
             Velocity: {score}
@@ -48,7 +58,17 @@ export function TrendIntelligenceCard({
       </div>
 
       {/* Micro-Telemetry Grid */}
-      <div className="grid grid-cols-3 gap-4 mt-auto border-t border-white/5 pt-4">
+      <div className={`grid ${has_github ? 'grid-cols-4' : 'grid-cols-3'} gap-4 mt-auto border-t border-white/5 pt-4`}>
+        {has_github && (
+          <div className="flex flex-col gap-1 p-3 rounded bg-black/20 border border-white/5">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest text-muted-foreground/60">
+              <Star className="w-3 h-3" /> GitHub
+            </div>
+            <span className="text-sm font-mono font-medium text-foreground/90">
+              {github_stars ? `${(github_stars / 1000).toFixed(1)}k` : 'Active'}
+            </span>
+          </div>
+        )}
         <div className="flex flex-col gap-1 p-3 rounded bg-black/20 border border-white/5">
           <div className="flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest text-muted-foreground/60">
             <Activity className="w-3 h-3" /> Velocity

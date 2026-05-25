@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 import asyncio
 from api.scrapers.feeds.rss import rss_fetcher
 from api.scrapers.feeds.hackernews import hn_fetcher
+from api.scrapers.github.trending import github_fetcher
 from api.ai.intelligence.engine import entity_engine
 
 class PipelineOrchestrator:
@@ -15,11 +16,14 @@ class PipelineOrchestrator:
         """Pulls from all sources and returns new unique articles."""
         new_articles = []
         
-        # Run RSS fetch synchronously in a thread, run HN fetch asynchronously
-        rss_articles = await asyncio.to_thread(rss_fetcher.fetch_all)
+        # Run RSS & Github fetch synchronously in a thread, run HN fetch asynchronously
+        rss_articles, gh_articles = await asyncio.gather(
+            asyncio.to_thread(rss_fetcher.fetch_all),
+            asyncio.to_thread(github_fetcher.fetch_all)
+        )
         hn_articles = await hn_fetcher.fetch_top_stories(limit=10)
         
-        all_fetched = rss_articles + hn_articles
+        all_fetched = rss_articles + hn_articles + gh_articles
         
         # Deduplicate
         for article in all_fetched:
