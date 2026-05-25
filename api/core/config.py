@@ -18,6 +18,16 @@ class Settings(BaseSettings):
     
     @property
     def ASYNC_DATABASE_URI(self) -> str:
+        # Vercel and Render inject the full URL as POSTGRES_URL or DATABASE_URL
+        direct_url = os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL")
+        if direct_url:
+            # SQLAlchemy asyncpg requires postgresql+asyncpg://
+            if direct_url.startswith("postgres://"):
+                direct_url = direct_url.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif direct_url.startswith("postgresql://"):
+                direct_url = direct_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return direct_url
+            
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
 settings = Settings()

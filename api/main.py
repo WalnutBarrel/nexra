@@ -15,6 +15,17 @@ from api.core.exceptions import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    # Initialize the database tables on boot
+    from api.database.session import engine
+    from api.database.base import Base
+    # Import all models so Base knows about them before create_all
+    from api.models.intelligence import NewsArticle, WebsiteReport, TrendingTopic
+    from api.models.entity_snapshot import EntitySnapshot
+    from api.models.relationship import EntityRelationship
+    
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        
     scheduler.start()
     yield
     # Shutdown
