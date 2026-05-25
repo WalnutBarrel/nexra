@@ -6,7 +6,14 @@ export function TopNav() {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span>Overview</span>
         <span className="text-border">/</span>
-        <span className="text-foreground font-medium">Discover</span>
+        <span className="text-foreground font-medium mr-4">Discover</span>
+        <div className="hidden sm:flex items-center gap-2 text-[10px] uppercase font-mono tracking-wider text-muted-foreground/80 bg-secondary/30 px-2 py-1 rounded border border-white/5">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+          </span>
+          Live Ingestion Active (3 Workers)
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

@@ -33,23 +33,23 @@ export function SearchHero({ onSearch }: SearchHeroProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 w-full transition-all duration-500">
-      <div className="mb-6 flex items-center gap-2 rounded-full border border-border/50 bg-secondary/50 px-3 py-1 text-xs text-muted-foreground backdrop-blur-sm transition-opacity duration-300">
+    <div className="flex flex-col items-center justify-center py-8 px-4 w-full transition-all duration-500">
+      <div className="mb-4 flex items-center gap-2 rounded-full border border-border/50 bg-secondary/30 px-3 py-1 text-[10px] uppercase font-mono tracking-widest text-muted-foreground backdrop-blur-sm transition-opacity duration-300">
         <Sparkles className="w-3 h-3 text-accent" />
         <span>Nexra Intelligence Engine v2.0</span>
       </div>
       
-      <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-foreground mb-8 text-center max-w-2xl transition-all duration-300">
+      <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-foreground mb-6 text-center max-w-2xl transition-all duration-300 leading-tight">
         What do you want to explore today?
       </h1>
 
       <div className="relative w-full max-w-2xl group z-20">
         {/* Animated focus glow */}
-        <div className={`absolute -inset-1 rounded-2xl bg-accent/20 blur-2xl transition-opacity duration-500 ${isFocused ? 'opacity-100' : 'opacity-0'}`}></div>
+        <div className={`absolute -inset-1 rounded-2xl bg-accent/10 blur-xl transition-opacity duration-500 ${isFocused ? 'opacity-100' : 'opacity-0'}`}></div>
         
-        <form onSubmit={handleSubmit} className="relative flex flex-col w-full rounded-xl border border-border bg-background shadow-lg transition-all duration-300 focus-within:border-accent/50 focus-within:ring-1 focus-within:ring-accent/50">
-          <div className="flex items-center px-4 py-4">
-            <Search className={`w-5 h-5 transition-colors duration-300 mr-3 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
+        <form onSubmit={handleSubmit} className="relative flex flex-col w-full rounded-xl border border-white/10 bg-[#111111] shadow-lg shadow-accent/5 transition-all duration-300 focus-within:border-accent/40 focus-within:ring-1 focus-within:ring-accent/20">
+          <div className="flex items-center px-4 py-3.5">
+            <Search className={`w-4 h-4 transition-colors duration-300 mr-3 ${isFocused ? 'text-accent' : 'text-muted-foreground'}`} />
             <input
               ref={inputRef}
               type="text"
@@ -58,9 +58,9 @@ export function SearchHero({ onSearch }: SearchHeroProps) {
               onFocus={() => setIsFocused(true)}
               onBlur={() => setTimeout(() => setIsFocused(false), 200)}
               placeholder="Search knowledge base, insights, or documents..."
-              className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none text-lg"
+              className="w-full bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none text-base font-medium"
             />
-            <div className="flex items-center gap-1 ml-3 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-md border border-border/50">
+            <div className="flex items-center gap-0.5 ml-3 text-[10px] text-muted-foreground/80 bg-black/40 px-1.5 py-0.5 rounded border border-white/5">
               <kbd className="font-sans">⌘</kbd>
               <kbd className="font-sans">K</kbd>
             </div>

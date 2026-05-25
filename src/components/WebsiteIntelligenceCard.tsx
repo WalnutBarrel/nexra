@@ -22,7 +22,7 @@ export function WebsiteIntelligenceCard({
     securityStatus === "warning" ? "text-amber-500/80" : "text-rose-500/80";
 
   return (
-    <div className="group relative flex flex-col rounded-xl border border-border/50 bg-background p-5 transition-all duration-300 hover:border-border hover:shadow-sm">
+    <div className="group relative flex flex-col rounded-xl border border-white/5 bg-[#111111] p-5 transition-all duration-300 hover:border-white/10 hover:shadow-sm hover:shadow-black/50">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Globe className="w-4 h-4 text-muted-foreground" />

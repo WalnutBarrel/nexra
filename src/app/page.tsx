@@ -97,7 +97,9 @@ export default function Home() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {newsData.map((news, idx) => (
-                    <NewsIntelligenceCard key={idx} {...news} />
+                    <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150}ms` }}>
+                      <NewsIntelligenceCard {...news} />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -108,10 +110,16 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col gap-4">
                   {websiteData.length > 0 ? websiteData.map((site, idx) => (
-                    <WebsiteIntelligenceCard key={idx} {...site} />
+                    <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150 + 200}ms` }}>
+                      <WebsiteIntelligenceCard {...site} />
+                    </div>
                   )) : (
-                    <div className="text-sm text-muted-foreground p-4 border border-border/50 rounded-xl bg-secondary/5">
-                      No domain telemetry generated for this query.
+                    <div className="text-sm text-muted-foreground/80 p-5 border border-white/5 rounded-xl bg-[#111111] shadow-inner shadow-black/50">
+                      <div className="flex items-center gap-2 mb-2 font-mono text-[10px] uppercase tracking-widest text-accent/80">
+                        <span className="w-2 h-2 bg-accent/50 rounded-sm animate-pulse"></span>
+                        Passive Inspection Active
+                      </div>
+                      Awaiting structured domain telemetry payload from scanning pipeline...
                     </div>
                   )}
                 </div>
