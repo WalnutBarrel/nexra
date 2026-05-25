@@ -5,7 +5,8 @@ engine = create_async_engine(
     settings.ASYNC_DATABASE_URI,
     echo=False,
     future=True,
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    connect_args={"ssl": "require"} if "neon.tech" in settings.ASYNC_DATABASE_URI else {}
 )
 
 AsyncSessionLocal = async_sessionmaker(

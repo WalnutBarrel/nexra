@@ -21,6 +21,10 @@ class Settings(BaseSettings):
         # Vercel and Render inject the full URL as POSTGRES_URL or DATABASE_URL
         direct_url = os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL")
         if direct_url:
+            # Strip query parameters (like ?sslmode=require) which crash asyncpg
+            if "?" in direct_url:
+                direct_url = direct_url.split("?")[0]
+                
             # SQLAlchemy asyncpg requires postgresql+asyncpg://
             if direct_url.startswith("postgres://"):
                 direct_url = direct_url.replace("postgres://", "postgresql+asyncpg://", 1)
