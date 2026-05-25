@@ -66,7 +66,7 @@ async def perform_search(q: str):
         if not recent:
             recent = await orchestrator.ingest_live_feeds()
             
-        trends = trend_engine.compute_trends(recent)
+        trends = await trend_engine.compute_trends(recent)
             
     # 3. STANDARD NEWS INTELLIGENCE INTENT
     else:

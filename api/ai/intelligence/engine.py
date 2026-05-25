@@ -108,10 +108,13 @@ class EntityIntelligenceEngine:
         except Exception as e:
             pass # Fail silently for background extraction
             
-    def get_ranked_entities(self, limit: int = 10) -> List[Dict[str, Any]]:
+    async def get_ranked_entities(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Calculates empirical velocity and ranks entities."""
         now = time.time()
         results = []
+        
+        # We need persistence_layer imported inside to avoid circular imports if any, or at top
+        from api.ai.intelligence.memory.persistence import persistence_layer
         
         for name, data in self.entity_memory.items():
             mentions = data["mentions"]
@@ -158,6 +161,9 @@ class EntityIntelligenceEngine:
                 
             velocity = min(100, velocity)
             
+            # Fetch temporal history from DB
+            history = await persistence_layer.get_historical_deltas(name)
+            
             results.append({
                 "name": name,
                 "category": data["category"],
@@ -168,7 +174,10 @@ class EntityIntelligenceEngine:
                 "github_stars": github_stars,
                 "has_reddit": has_reddit,
                 "dominant_sentiment": dominant_sentiment,
-                "discussion_intensity": reddit_comments
+                "discussion_intensity": reddit_comments,
+                "delta_24h": history.get("delta_24h"),
+                "delta_7d": history.get("delta_7d"),
+                "lifecycle_state": history.get("lifecycle_state")
             })
             
         # Sort by velocity descending

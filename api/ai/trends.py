@@ -16,9 +16,9 @@ class TrendEngine:
             {"topic": "Autonomous Agents", "category": "AI Research", "trend": "up", "score": 95, "sources": 3, "mentions": 12, "narrative": "Empirical velocity indicates strong acceleration in autonomous capabilities."},
         ]
 
-    def compute_trends(self, recent_articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def compute_trends(self, recent_articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Analyzes recent headlines to output top trending topics using evidence-backed entity telemetry."""
-        entities = entity_engine.get_ranked_entities(limit=4)
+        entities = await entity_engine.get_ranked_entities(limit=4)
         
         if not settings.GEMINI_API_KEY or not entities:
             return self.mock_trends
@@ -31,6 +31,7 @@ class TrendEngine:
             Do not invent data. Use operational terminology (e.g. "Velocity indicates strong multi-source recurrence").
             If an entity has 'has_github' set to true, you MUST cite its GitHub trending presence and star count as evidence of developer traction.
             If an entity has 'has_reddit' set to true, you MUST cite its 'dominant_sentiment' (e.g., excitement, skepticism) and 'discussion_intensity' to describe ecosystem realism.
+            If an entity has 'lifecycle_state' and deltas, you MUST incorporate this temporal intelligence into the narrative (e.g. "Momentum accelerated 340% over the past 24 hours", "Stabilizing after rapid growth").
             
             Entity Telemetry:
             {json.dumps(entities)}
@@ -48,6 +49,9 @@ class TrendEngine:
             - has_reddit (boolean, matching has_reddit)
             - dominant_sentiment (string, matching dominant_sentiment)
             - discussion_intensity (integer, matching discussion_intensity)
+            - delta_24h (float, matching delta_24h)
+            - delta_7d (float, matching delta_7d)
+            - lifecycle_state (string, matching lifecycle_state)
             """
             
             response = model.generate_content(prompt)
@@ -72,7 +76,10 @@ class TrendEngine:
                     "github_stars": e.get("github_stars", 0),
                     "has_reddit": e.get("has_reddit", False),
                     "dominant_sentiment": e.get("dominant_sentiment", None),
-                    "discussion_intensity": e.get("discussion_intensity", 0)
+                    "discussion_intensity": e.get("discussion_intensity", 0),
+                    "delta_24h": e.get("delta_24h", None),
+                    "delta_7d": e.get("delta_7d", None),
+                    "lifecycle_state": e.get("lifecycle_state", None)
                 })
             return fallback if fallback else self.mock_trends
 

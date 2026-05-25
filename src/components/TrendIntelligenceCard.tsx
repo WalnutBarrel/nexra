@@ -13,6 +13,9 @@ interface TrendIntelligenceCardProps {
   has_reddit?: boolean;
   dominant_sentiment?: string;
   discussion_intensity?: number;
+  delta_24h?: number;
+  delta_7d?: number;
+  lifecycle_state?: string;
 }
 
 export function TrendIntelligenceCard({
@@ -27,7 +30,10 @@ export function TrendIntelligenceCard({
   github_stars,
   has_reddit,
   dominant_sentiment,
-  discussion_intensity
+  discussion_intensity,
+  delta_24h,
+  delta_7d,
+  lifecycle_state
 }: TrendIntelligenceCardProps) {
   
   // Calculate grid columns based on available telemetry
@@ -38,15 +44,20 @@ export function TrendIntelligenceCard({
     <div className="group relative flex flex-col rounded-xl border border-white/5 bg-[#111111] p-6 transition-all duration-300 hover:border-white/10 hover:shadow-lg hover:shadow-black/60 font-sans">
       
       {/* Top Row: Topic & Primary Status */}
-      <div className="mb-4 flex items-center justify-between border-b border-white/5 pb-4">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-3 sm:gap-0">
         <div className="flex items-center gap-3">
           <TrendingUp className="w-5 h-5 text-accent/80" />
           <h3 className="text-xl font-medium tracking-tight text-foreground/90">{topic}</h3>
           <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/5 bg-white/[0.02] text-[10px] uppercase font-mono tracking-widest text-muted-foreground/60">
             {category}
           </div>
+          {lifecycle_state && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-accent/20 bg-accent/5 text-[10px] uppercase font-mono tracking-widest text-accent/90">
+              {lifecycle_state}
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {has_github && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 border border-white/10 text-[10px] uppercase font-mono tracking-widest text-foreground/80">
               <GitBranch className="w-3 h-3" />
@@ -61,7 +72,12 @@ export function TrendIntelligenceCard({
           )}
           <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-accent/5 border border-accent/20 text-[10px] uppercase font-mono tracking-widest text-accent/80">
             <Zap className="w-3 h-3" />
-            Velocity: {score}
+            Velocity: {score} 
+            {delta_24h !== undefined && (
+              <span className={delta_24h >= 0 ? "text-green-400" : "text-red-400"}>
+                ({delta_24h >= 0 ? '+' : ''}{delta_24h}%)
+              </span>
+            )}
           </div>
         </div>
       </div>
