@@ -2,23 +2,11 @@ services:
   - type: web
     name: nexra-api
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-
-  - type: worker
-    name: nexra-worker
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "rq worker high default low --url $REDIS_URL"
+    # Hacky but effective: We start the RQ worker in the background, then start the web server in the foreground, 
+    # all inside Render's single free container.
+    startCommand: "rq worker high default low --url $REDIS_URL & uvicorn api.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
