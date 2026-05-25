@@ -32,6 +32,7 @@ class TrendEngine:
             If an entity has 'has_github' set to true, you MUST cite its GitHub trending presence and star count as evidence of developer traction.
             If an entity has 'has_reddit' set to true, you MUST cite its 'dominant_sentiment' (e.g., excitement, skepticism) and 'discussion_intensity' to describe ecosystem realism.
             If an entity has 'lifecycle_state' and deltas, you MUST incorporate this temporal intelligence into the narrative (e.g. "Momentum accelerated 340% over the past 24 hours", "Stabilizing after rapid growth").
+            If an entity has 'ecosystem' or 'relationships', explicitly contextualize it within its ecosystem (e.g. "Acceleration observed across the AI IDE ecosystem surrounding Cursor, Claude integration...").
             
             Entity Telemetry:
             {json.dumps(entities)}
@@ -39,6 +40,7 @@ class TrendEngine:
             Return ONLY a valid JSON array of objects with:
             - topic (string, matching the entity name)
             - category (string, matching the entity category)
+            - ecosystem (string, matching the ecosystem)
             - trend (string: "up")
             - score (integer, matching velocity)
             - sources (integer, matching sources)
@@ -52,6 +54,7 @@ class TrendEngine:
             - delta_24h (float, matching delta_24h)
             - delta_7d (float, matching delta_7d)
             - lifecycle_state (string, matching lifecycle_state)
+            - relationships (list of objects, matching relationships)
             """
             
             response = model.generate_content(prompt)
@@ -67,6 +70,7 @@ class TrendEngine:
                 fallback.append({
                     "topic": e["name"],
                     "category": e["category"],
+                    "ecosystem": e.get("ecosystem"),
                     "trend": "up",
                     "score": e["velocity"],
                     "sources": e["sources"],
@@ -79,7 +83,8 @@ class TrendEngine:
                     "discussion_intensity": e.get("discussion_intensity", 0),
                     "delta_24h": e.get("delta_24h", None),
                     "delta_7d": e.get("delta_7d", None),
-                    "lifecycle_state": e.get("lifecycle_state", None)
+                    "lifecycle_state": e.get("lifecycle_state", None),
+                    "relationships": e.get("relationships", [])
                 })
             return fallback if fallback else self.mock_trends
 

@@ -21,8 +21,9 @@ async def snapshot_persistence_job():
     """Persist the current entity hot-cache to PostgreSQL every hour."""
     try:
         # get_ranked_entities without limit to get all active entities
-        entities = entity_engine.get_ranked_entities(limit=100)
-        await persistence_layer.save_snapshots(entities)
+        entities = await entity_engine.get_ranked_entities(limit=100)
+        relationships = entity_engine.relationship_memory
+        await persistence_layer.save_snapshots(entities, relationships)
         logger.info(f"Snapshot persistence job complete: saved {len(entities)} entities.")
     except Exception as e:
         logger.error(f"Snapshot persistence job failed: {e}")

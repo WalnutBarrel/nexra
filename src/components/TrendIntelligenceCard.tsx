@@ -3,6 +3,7 @@ import { TrendingUp, Activity, Users, MessageSquare, Zap, GitBranch, Star, Radio
 interface TrendIntelligenceCardProps {
   topic: string;
   category: string;
+  ecosystem?: string;
   trend: string;
   score: number;
   sources: number;
@@ -16,11 +17,17 @@ interface TrendIntelligenceCardProps {
   delta_24h?: number;
   delta_7d?: number;
   lifecycle_state?: string;
+  relationships?: Array<{
+    entity: string;
+    type: string;
+    confidence: number;
+  }>;
 }
 
 export function TrendIntelligenceCard({
   topic,
   category,
+  ecosystem,
   trend,
   score,
   sources,
@@ -33,7 +40,8 @@ export function TrendIntelligenceCard({
   discussion_intensity,
   delta_24h,
   delta_7d,
-  lifecycle_state
+  lifecycle_state,
+  relationships
 }: TrendIntelligenceCardProps) {
   
   // Calculate grid columns based on available telemetry
@@ -45,17 +53,27 @@ export function TrendIntelligenceCard({
       
       {/* Top Row: Topic & Primary Status */}
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-3 sm:gap-0">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <TrendingUp className="w-5 h-5 text-accent/80" />
           <h3 className="text-xl font-medium tracking-tight text-foreground/90">{topic}</h3>
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/5 bg-white/[0.02] text-[10px] uppercase font-mono tracking-widest text-muted-foreground/60">
-            {category}
-          </div>
-          {lifecycle_state && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-accent/20 bg-accent/5 text-[10px] uppercase font-mono tracking-widest text-accent/90">
-              {lifecycle_state}
+          
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/5 bg-white/[0.02] text-[10px] uppercase font-mono tracking-widest text-muted-foreground/60">
+              {category}
             </div>
-          )}
+            
+            {ecosystem && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/10 bg-white/5 text-[10px] uppercase font-mono tracking-widest text-foreground/80">
+                Cluster: {ecosystem}
+              </div>
+            )}
+            
+            {lifecycle_state && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-accent/20 bg-accent/5 text-[10px] uppercase font-mono tracking-widest text-accent/90">
+                {lifecycle_state}
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {has_github && (
@@ -83,12 +101,25 @@ export function TrendIntelligenceCard({
       </div>
 
       {/* Narrative */}
-      <div className="mb-6 relative">
+      <div className="mb-4 relative">
         <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-accent/30 rounded-full"></div>
         <p className="pl-4 text-sm text-foreground/80 leading-relaxed font-serif italic tracking-wide">
           "{narrative}"
         </p>
       </div>
+
+      {/* Relationship Telemetry */}
+      {relationships && relationships.length > 0 && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 text-xs font-mono">
+          <span className="text-muted-foreground/60 uppercase tracking-widest text-[9px] mr-1">Correlations:</span>
+          {relationships.map((rel, i) => (
+            <div key={i} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/40 border border-white/5 text-foreground/70">
+              <span>{rel.type}</span>
+              <span className="text-accent/80 font-semibold">{rel.entity}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Micro-Telemetry Grid */}
       <div className={`grid ${gridClass} gap-3 sm:gap-4 mt-auto border-t border-white/5 pt-4`}>

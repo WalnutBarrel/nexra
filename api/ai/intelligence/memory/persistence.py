@@ -11,10 +11,12 @@ from api.ai.intelligence.memory.deltas import delta_calculator
 logger = logging.getLogger(__name__)
 
 class PersistenceLayer:
-    async def save_snapshots(self, entities: List[Dict[str, Any]]) -> None:
-        """Saves current state of entities from the hot cache to PostgreSQL."""
+    async def save_snapshots(self, entities: List[Dict[str, Any]], relationships: List[Dict[str, Any]] = None) -> None:
+        """Saves current state of entities and relationships from the hot cache to PostgreSQL."""
+        from api.models.relationship import EntityRelationship
         try:
             async for session in get_db():
+                # Persist Entities
                 for e in entities:
                     snapshot = EntitySnapshot(
                         entity_name=e["name"],
@@ -22,23 +24,46 @@ class PersistenceLayer:
                         source_diversity=e["sources"],
                         github_stars=e.get("github_stars", 0),
                         reddit_discussion_intensity=e.get("discussion_intensity", 0),
-                        velocity_score=e["velocity"]
+                        velocity_score=e["velocity"],
+                        lifecycle_state=e.get("lifecycle_state")
                     )
                     
-                    # Compute sentiment score mapping if needed
                     sentiment_str = e.get("dominant_sentiment")
                     score_map = {"excitement": 1.0, "adoption": 0.8, "neutral": 0.0, "skepticism": -0.5, "frustration": -1.0}
                     snapshot.sentiment_score = score_map.get(sentiment_str, 0.0) if sentiment_str else 0.0
                     
-                    # Generate lifecycle state before saving
-                    # We need history to calculate lifecycle accurately, but we can do a lightweight version
-                    # In a robust system, we would query history first. For now, we save raw metrics.
                     session.add(snapshot)
                 
+                # Persist Relationships
+                if relationships:
+                    # Group by pairs to get confidence
+                    from api.ai.intelligence.relationships.scoring import relationship_scorer
+                    
+                    grouped = {}
+                    for r in relationships:
+                        pair = tuple(sorted([r["entity_a"], r["entity_b"]]))
+                        if pair not in grouped:
+                            grouped[pair] = []
+                        grouped[pair].append(r)
+                        
+                    for pair, rels in grouped.items():
+                        conf = relationship_scorer.calculate_confidence(rels)
+                        if conf >= 0.5:
+                            # Save the highest confidence relationship direction
+                            primary_rel = rels[0]
+                            db_rel = EntityRelationship(
+                                entity_a=primary_rel["entity_a"],
+                                relationship_type=primary_rel["relationship_type"],
+                                entity_b=primary_rel["entity_b"],
+                                confidence_score=conf,
+                                source_count=len(rels)
+                            )
+                            session.add(db_rel)
+
                 await session.commit()
                 break # Only need one session
         except Exception as e:
-            logger.error(f"Failed to persist snapshots: {e}")
+            logger.error(f"Failed to persist snapshots/relationships: {e}")
 
     async def get_historical_deltas(self, entity_name: str) -> Dict[str, Any]:
         """Calculates 24h and 7d deltas by querying recent snapshots."""

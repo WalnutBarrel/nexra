@@ -14,9 +14,10 @@ class EntityIntelligenceEngine:
         self.model_name = "gemini-1.5-flash"
         # In-memory storage: { "Cursor": { "mentions": [ { "timestamp": float, "source": str } ], "category": "AI Tooling" } }
         self.entity_memory: Dict[str, Dict[str, Any]] = {}
+        self.relationship_memory: List[Dict[str, Any]] = []
         
     def extract_and_store_entities(self, articles: List[Dict[str, Any]]) -> None:
-        """Extracts entities from a batch of articles and stores them in memory."""
+        """Extracts entities and relationships from a batch of articles and stores them in memory."""
         if not settings.GEMINI_API_KEY or not articles:
             return
             
@@ -26,7 +27,6 @@ class EntityIntelligenceEngine:
         llm_articles = []
         for article in articles:
             if article.get("source") == "GitHub Trending":
-                # The entity is the repo itself
                 metrics = article.get("github_metrics", {})
                 e_name = article["title"].replace("GitHub Trending: ", "").strip().title()
                 
@@ -57,9 +57,12 @@ class EntityIntelligenceEngine:
             reddit_metrics_map = {idx: a.get("reddit_metrics", {}) for idx, a in enumerate(llm_articles)}
             headlines = [{"id": idx, "title": a["title"], "source": a["source"]} for idx, a in enumerate(llm_articles)]
             
+            from api.ai.intelligence.relationships.extractor import relationship_extractor
+            
             prompt = f"""
             You are a senior intelligence analyst. Extract the most prominent technology entities (companies, products, frameworks, tools) from these headlines.
             If a headline comes from Reddit, also infer the dominant developer sentiment (e.g., "excitement", "frustration", "skepticism", "adoption").
+            Also, extract any explicit or implicit relationships between these entities (e.g., "Cursor" uses "Claude", "LangGraph" is an "AI Agent Framework").
             
             Input Headlines:
             {json.dumps(headlines)}
@@ -69,6 +72,7 @@ class EntityIntelligenceEngine:
             - entities (list of strings, e.g., ["Cursor", "Anthropic", "React"])
             - category (string, a broad category like "AI Tooling" or "Frameworks" for these entities)
             - sentiment_indicator (string, ONLY if the source is Reddit, e.g., "excitement")
+            - relationships (list of objects with 'entity_a', 'relationship', 'entity_b')
             
             No markdown formatting. Return raw JSON array.
             """
@@ -83,6 +87,7 @@ class EntityIntelligenceEngine:
                 category = item.get("category", "Technology")
                 entities = item.get("entities", [])
                 sentiment = item.get("sentiment_indicator")
+                raw_relationships = item.get("relationships", [])
                 r_metrics = reddit_metrics_map.get(article_id, {})
                 
                 for entity in entities:
@@ -105,6 +110,10 @@ class EntityIntelligenceEngine:
                     
                     self.entity_memory[e_name]["mentions"].append(mention_data)
                     
+                # Parse and track relationships in the hot-cache
+                parsed_rels = relationship_extractor.parse_gemini_relationships(raw_relationships, source, now)
+                self.relationship_memory.extend(parsed_rels)
+                    
         except Exception as e:
             pass # Fail silently for background extraction
             
@@ -115,6 +124,8 @@ class EntityIntelligenceEngine:
         
         # We need persistence_layer imported inside to avoid circular imports if any, or at top
         from api.ai.intelligence.memory.persistence import persistence_layer
+        from api.ai.intelligence.relationships.ecosystems import ecosystem_classifier
+        from api.ai.intelligence.relationships.scoring import relationship_scorer
         
         for name, data in self.entity_memory.items():
             mentions = data["mentions"]
@@ -161,12 +172,37 @@ class EntityIntelligenceEngine:
                 
             velocity = min(100, velocity)
             
+            # Relationships for this entity
+            entity_rels = [r for r in self.relationship_memory if r["entity_a"] == name.lower() or r["entity_b"] == name.lower()]
+            
+            # Group by connected entity
+            connected_entities = {}
+            for r in entity_rels:
+                other = r["entity_b"] if r["entity_a"] == name.lower() else r["entity_a"]
+                if other not in connected_entities:
+                    connected_entities[other] = []
+                connected_entities[other].append(r)
+                
+            high_confidence_rels = []
+            for other, occurrences in connected_entities.items():
+                conf = relationship_scorer.calculate_confidence(occurrences)
+                if conf >= 0.5:
+                    high_confidence_rels.append({
+                        "entity": other.title(),
+                        "type": occurrences[0]["relationship_type"],
+                        "confidence": conf
+                    })
+            
+            # Classify ecosystem
+            ecosystem = ecosystem_classifier.classify_ecosystem(name, entity_rels)
+            
             # Fetch temporal history from DB
             history = await persistence_layer.get_historical_deltas(name)
             
             results.append({
                 "name": name,
                 "category": data["category"],
+                "ecosystem": ecosystem,
                 "mentions": mention_count,
                 "sources": unique_sources,
                 "velocity": velocity,
@@ -177,7 +213,8 @@ class EntityIntelligenceEngine:
                 "discussion_intensity": reddit_comments,
                 "delta_24h": history.get("delta_24h"),
                 "delta_7d": history.get("delta_7d"),
-                "lifecycle_state": history.get("lifecycle_state")
+                "lifecycle_state": history.get("lifecycle_state"),
+                "relationships": high_confidence_rels[:3] # Top 3
             })
             
         # Sort by velocity descending
