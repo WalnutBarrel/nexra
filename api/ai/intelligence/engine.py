@@ -45,7 +45,7 @@ class EntityIntelligenceEngine:
             else:
                 llm_articles.append(article)
                 
-        # 2. Standard LLM extraction for regular news
+        # 2. Standard LLM extraction for regular news and Reddit
         if not llm_articles:
             return
             
@@ -54,10 +54,12 @@ class EntityIntelligenceEngine:
             
             # Map index to source to maintain attribution
             article_map = {idx: a["source"] for idx, a in enumerate(llm_articles)}
-            headlines = [{"id": idx, "title": a["title"]} for idx, a in enumerate(llm_articles)]
+            reddit_metrics_map = {idx: a.get("reddit_metrics", {}) for idx, a in enumerate(llm_articles)}
+            headlines = [{"id": idx, "title": a["title"], "source": a["source"]} for idx, a in enumerate(llm_articles)]
             
             prompt = f"""
             You are a senior intelligence analyst. Extract the most prominent technology entities (companies, products, frameworks, tools) from these headlines.
+            If a headline comes from Reddit, also infer the dominant developer sentiment (e.g., "excitement", "frustration", "skepticism", "adoption").
             
             Input Headlines:
             {json.dumps(headlines)}
@@ -66,6 +68,7 @@ class EntityIntelligenceEngine:
             - id (integer, matching the input headline)
             - entities (list of strings, e.g., ["Cursor", "Anthropic", "React"])
             - category (string, a broad category like "AI Tooling" or "Frameworks" for these entities)
+            - sentiment_indicator (string, ONLY if the source is Reddit, e.g., "excitement")
             
             No markdown formatting. Return raw JSON array.
             """
@@ -79,6 +82,8 @@ class EntityIntelligenceEngine:
                 source = article_map.get(article_id, "Unknown Feed")
                 category = item.get("category", "Technology")
                 entities = item.get("entities", [])
+                sentiment = item.get("sentiment_indicator")
+                r_metrics = reddit_metrics_map.get(article_id, {})
                 
                 for entity in entities:
                     # Normalize entity name
@@ -89,10 +94,16 @@ class EntityIntelligenceEngine:
                             "mentions": []
                         }
                     
-                    self.entity_memory[e_name]["mentions"].append({
+                    mention_data = {
                         "timestamp": now,
                         "source": source
-                    })
+                    }
+                    if "Reddit" in source:
+                        mention_data["sentiment"] = sentiment or "neutral"
+                        mention_data["reddit_score"] = r_metrics.get("score", 0)
+                        mention_data["reddit_comments"] = r_metrics.get("comments", 0)
+                    
+                    self.entity_memory[e_name]["mentions"].append(mention_data)
                     
         except Exception as e:
             pass # Fail silently for background extraction
@@ -116,10 +127,23 @@ class EntityIntelligenceEngine:
             # Check for GitHub presence to boost velocity
             has_github = False
             github_stars = 0
+            has_reddit = False
+            reddit_score = 0
+            reddit_comments = 0
+            sentiments = []
+            
             for m in recent_mentions:
                 if m["source"] == "GitHub Trending":
                     has_github = True
                     github_stars = max(github_stars, m.get("github_stars", 0))
+                if "Reddit" in m["source"]:
+                    has_reddit = True
+                    reddit_score += m.get("reddit_score", 0)
+                    reddit_comments += m.get("reddit_comments", 0)
+                    if m.get("sentiment") and m.get("sentiment") != "neutral":
+                        sentiments.append(m.get("sentiment"))
+            
+            dominant_sentiment = max(set(sentiments), key=sentiments.count) if sentiments else None
             
             # Velocity Calculation: (Mention Count * 2) + (Unique Sources * 5)
             velocity = (mention_count * 2) + (unique_sources * 5)
@@ -127,6 +151,10 @@ class EntityIntelligenceEngine:
             # Heavy boost for GitHub trending presence
             if has_github:
                 velocity += 20 + (github_stars // 1000)
+                
+            # Boost for Reddit engagement
+            if has_reddit:
+                velocity += 10 + (reddit_comments // 10) + (reddit_score // 50)
                 
             velocity = min(100, velocity)
             
@@ -137,7 +165,10 @@ class EntityIntelligenceEngine:
                 "sources": unique_sources,
                 "velocity": velocity,
                 "has_github": has_github,
-                "github_stars": github_stars
+                "github_stars": github_stars,
+                "has_reddit": has_reddit,
+                "dominant_sentiment": dominant_sentiment,
+                "discussion_intensity": reddit_comments
             })
             
         # Sort by velocity descending

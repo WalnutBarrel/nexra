@@ -30,6 +30,7 @@ class TrendEngine:
             You are a senior intelligence analyst. Write a highly tactical, 1-sentence evidence-backed narrative for each of the following tracked entities based ONLY on their telemetry.
             Do not invent data. Use operational terminology (e.g. "Velocity indicates strong multi-source recurrence").
             If an entity has 'has_github' set to true, you MUST cite its GitHub trending presence and star count as evidence of developer traction.
+            If an entity has 'has_reddit' set to true, you MUST cite its 'dominant_sentiment' (e.g., excitement, skepticism) and 'discussion_intensity' to describe ecosystem realism.
             
             Entity Telemetry:
             {json.dumps(entities)}
@@ -44,6 +45,9 @@ class TrendEngine:
             - narrative (string, your 1-sentence synthesis)
             - has_github (boolean, matching has_github)
             - github_stars (integer, matching github_stars)
+            - has_reddit (boolean, matching has_reddit)
+            - dominant_sentiment (string, matching dominant_sentiment)
+            - discussion_intensity (integer, matching discussion_intensity)
             """
             
             response = model.generate_content(prompt)
@@ -65,7 +69,10 @@ class TrendEngine:
                     "mentions": e["mentions"],
                     "narrative": "Empirical entity telemetry captured. AI synthesis unavailable.",
                     "has_github": e.get("has_github", False),
-                    "github_stars": e.get("github_stars", 0)
+                    "github_stars": e.get("github_stars", 0),
+                    "has_reddit": e.get("has_reddit", False),
+                    "dominant_sentiment": e.get("dominant_sentiment", None),
+                    "discussion_intensity": e.get("discussion_intensity", 0)
                 })
             return fallback if fallback else self.mock_trends
 
