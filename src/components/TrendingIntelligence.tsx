@@ -1,43 +1,41 @@
-import { TrendingUp, TrendingDown, Activity } from "lucide-react";
+"use client";
 
-const TRENDING_DATA = [
-  {
-    topic: "Autonomous Supply Chains",
-    category: "Logistics Tech",
-    trend: "up",
-    score: 92,
-  },
-  {
-    topic: "Synthetic Data Generation",
-    category: "AI Research",
-    trend: "up",
-    score: 88,
-  },
-  {
-    topic: "Legacy CRM Migration",
-    category: "Enterprise IT",
-    trend: "down",
-    score: 45,
-  },
-  {
-    topic: "Quantum Error Correction",
-    category: "Deep Tech",
-    trend: "up",
-    score: 76,
-  },
-];
+import { useState, useEffect } from "react";
+import { TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { IntelligenceApi } from "@/lib/api/client";
 
 export function TrendingIntelligence() {
+  const [trends, setTrends] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTrends() {
+      try {
+        const response: any = await IntelligenceApi.getTrending();
+        setTrends(response.data || []);
+      } catch (e) {
+        console.error("Failed to fetch trends", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTrends();
+  }, []);
+
+  if (loading) {
+    return <div className="text-sm text-muted-foreground animate-pulse">Computing telemetry...</div>;
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
         <Activity className="w-3.5 h-3.5" />
-        Trending Signals
+        Accelerating Trends
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {TRENDING_DATA.map((item) => (
+        {trends.map((item, idx) => (
           <div
-            key={item.topic}
+            key={idx}
             className="group flex flex-col justify-between rounded-lg border border-border/40 bg-secondary/10 p-4 transition-all hover:bg-secondary/30 hover:border-border"
           >
             <div className="flex justify-between items-start mb-3">
@@ -60,7 +58,7 @@ export function TrendingIntelligence() {
                   style={{ width: `${item.score}%` }} 
                 />
               </div>
-              <span className="text-xs text-muted-foreground">{item.score}</span>
+              <span className="text-xs text-muted-foreground font-mono">{item.score}</span>
             </div>
           </div>
         ))}

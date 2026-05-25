@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { SearchHero } from "@/components/SearchHero";
-import { RecentSearches } from "@/components/RecentSearches";
 import { TrendingIntelligence } from "@/components/TrendingIntelligence";
+import { LiveIngestionFeed } from "@/components/LiveIngestionFeed";
 import { NewsIntelligenceCard } from "@/components/NewsIntelligenceCard";
 import { WebsiteIntelligenceCard } from "@/components/WebsiteIntelligenceCard";
 import { SearchingState, NoResultsState } from "@/components/SearchStates";
@@ -62,13 +62,9 @@ export default function Home() {
       
       <div className="px-8 lg:px-12 max-w-7xl mx-auto w-full transition-all duration-500">
         {searchState === "empty" && (
-          <div className="animate-in fade-in duration-500">
-            <div className="mb-12">
-              <RecentSearches />
-            </div>
-            <div className="mb-12">
-              <TrendingIntelligence />
-            </div>
+          <div className="animate-in fade-in duration-500 grid grid-cols-1 lg:grid-cols-2 gap-12 mt-8">
+            <LiveIngestionFeed />
+            <TrendingIntelligence />
           </div>
         )}
 

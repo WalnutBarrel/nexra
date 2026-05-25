@@ -29,6 +29,8 @@ export class ApiClient {
 export const IntelligenceApi = {
   search: (query: string) => ApiClient.fetch(`/search?q=${encodeURIComponent(query)}`),
   getNews: () => ApiClient.fetch(`/news`),
+  getTrending: () => ApiClient.fetch(`/news/trending`),
+  getLiveNews: () => ApiClient.fetch(`/news/live`),
   getWebsites: () => ApiClient.fetch(`/websites`),
   scanWebsite: (domain: string) => ApiClient.fetch(`/websites/scan/${encodeURIComponent(domain)}`),
 };
