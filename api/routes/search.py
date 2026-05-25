@@ -57,10 +57,6 @@ async def perform_search(q: str):
         for item in enriched:
             if base_name in item.get("title", "").lower() or base_name in item.get("summary", "").lower():
                 news.append(item)
-                
-        # If no specific context found, just pass a few recent items as passive background context
-        if not news:
-            news = enriched[:2]
             
     # 2. TREND ANALYSIS INTENT
     elif intent == "TREND_ANALYSIS":
