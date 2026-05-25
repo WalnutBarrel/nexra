@@ -2,7 +2,7 @@ import { Globe, Gauge, Lock, Search, Share2 } from "lucide-react";
 
 interface WebsiteIntelligenceCardProps {
   domain: string;
-  technologies: string[];
+  technologies: any[];
   seoScore: number;
   performanceScore: number;
   securityStatus: "secure" | "warning" | "critical";
@@ -35,11 +35,14 @@ export function WebsiteIntelligenceCard({
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
-        {technologies.map((tech) => (
-          <span key={tech} className="rounded-md bg-secondary/30 px-2 py-0.5 text-xs text-muted-foreground border border-border/20">
-            {tech}
-          </span>
-        ))}
+        {technologies.map((tech, idx) => {
+          const name = typeof tech === "string" ? tech : tech.name;
+          return (
+            <span key={idx} className="rounded-md bg-secondary/30 px-2 py-0.5 text-xs text-muted-foreground border border-border/20">
+              {name}
+            </span>
+          );
+        })}
       </div>
 
       <div className="mt-auto grid grid-cols-3 gap-2 pt-4 border-t border-border/30">
