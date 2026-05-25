@@ -29,6 +29,13 @@ export default function Home() {
   const [currentQuery, setCurrentQuery] = useState("");
   const [newsData, setNewsData] = useState<any[]>([]);
   const [websiteData, setWebsiteData] = useState<any[]>([]);
+  const [queryIntent, setQueryIntent] = useState<string>("NEWS_INTELLIGENCE");
+
+  const classifyLocalIntent = (q: string) => {
+    const domainPattern = /([a-zA-Z0-9-]+\.(com|io|ai|dev|org|net|co|app))|^(https?:\/\/)/i;
+    if (domainPattern.test(q)) return "domain";
+    return "news";
+  };
 
   const handleSearch = async (query: string) => {
     setCurrentQuery(query);
@@ -45,6 +52,7 @@ export default function Home() {
       } else {
         setNewsData(response.news_results?.length ? response.news_results : FALLBACK_MOCK_NEWS);
         setWebsiteData(response.website_results || []);
+        setQueryIntent(response.intent || classifyLocalIntent(query).toUpperCase());
         setSearchState("results");
       }
     } catch (error) {
@@ -69,7 +77,7 @@ export default function Home() {
         )}
 
         {searchState === "searching" && (
-          <SearchingState />
+          <SearchingState queryType={classifyLocalIntent(currentQuery) as any} />
         )}
 
         {searchState === "no-results" && (
@@ -90,21 +98,9 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-8 flex flex-col gap-6">
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  News & Reports
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {newsData.map((news, idx) => (
-                    <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150}ms` }}>
-                      <NewsIntelligenceCard {...news} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="lg:col-span-4 flex flex-col gap-6">
+            <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8`}>
+              {/* If DOMAIN_SCAN, put Website Intelligence in the massive 8-col primary spot. Otherwise, it goes in 4-col */}
+              <div className={`flex flex-col gap-6 ${queryIntent === 'DOMAIN_SCAN' ? 'lg:col-span-8 lg:order-1' : 'lg:col-span-4 lg:order-2'}`}>
                 <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
                   Domain Intelligence
                 </div>
@@ -122,6 +118,20 @@ export default function Home() {
                       Awaiting structured domain telemetry payload from scanning pipeline...
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* If DOMAIN_SCAN, put News in the smaller 4-col secondary spot. Otherwise, it goes in 8-col primary */}
+              <div className={`flex flex-col gap-6 ${queryIntent === 'DOMAIN_SCAN' ? 'lg:col-span-4 lg:order-2' : 'lg:col-span-8 lg:order-1'}`}>
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                  {queryIntent === 'DOMAIN_SCAN' ? 'Contextual Signals' : 'News & Reports'}
+                </div>
+                <div className={`grid grid-cols-1 ${queryIntent === 'DOMAIN_SCAN' ? 'md:grid-cols-1' : 'md:grid-cols-2'} gap-6`}>
+                  {newsData.map((news, idx) => (
+                    <div key={idx} className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: `${idx * 150}ms` }}>
+                      <NewsIntelligenceCard {...news} />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
