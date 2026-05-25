@@ -22,9 +22,10 @@ class RedditFetcher:
     async def fetch_subreddit(self, subreddit: str) -> List[Dict[str, Any]]:
         url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=5"
         try:
-            # Reddit requires a unique User-Agent
+            # Reddit requires a highly specific User-Agent format for unauthenticated scripts
+            # format: <platform>:<app ID>:<version string> (by /u/<reddit username>)
             headers = {
-                "User-Agent": "NexraIntelligence/1.0 (Integration/Development)"
+                "User-Agent": "web:nexra.intelligence.engine:v1.0 (by /u/nexradev)"
             }
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, headers=headers, timeout=10.0)
