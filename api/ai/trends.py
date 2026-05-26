@@ -1,11 +1,8 @@
 import json
 from typing import Dict, Any, List
-import google.generativeai as genai
+from google import genai
 from api.core.config import settings
 from api.ai.intelligence.engine import entity_engine
-
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
 
 class TrendEngine:
     """Analyzes streams of articles to detect accelerating topics."""
@@ -24,7 +21,7 @@ class TrendEngine:
             return self.mock_trends
             
         try:
-            model = genai.GenerativeModel(self.model_name)
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
             
             prompt = f"""
             You are a senior intelligence analyst. Write a highly tactical, 1-sentence evidence-backed narrative for each of the following tracked entities based ONLY on their telemetry.
@@ -64,7 +61,10 @@ class TrendEngine:
             - relationships (list of objects, matching relationships)
             """
             
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
             response_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
             
             trends = json.loads(response_text)

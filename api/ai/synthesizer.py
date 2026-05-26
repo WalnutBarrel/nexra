@@ -1,10 +1,7 @@
 import json
 from typing import Dict, Any, List
-import google.generativeai as genai
+from google import genai
 from api.core.config import settings
-
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
 
 class IntelligenceSynthesizer:
     """Uses AI to enrich raw news items with sentiment and executive summaries."""
@@ -23,7 +20,7 @@ class IntelligenceSynthesizer:
             return articles
             
         try:
-            model = genai.GenerativeModel(self.model_name)
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
             
             # Pack headlines into a prompt to minimize API calls
             headlines = [{"id": a["id"], "title": a["title"]} for a in articles]
@@ -42,7 +39,10 @@ class IntelligenceSynthesizer:
             Return ONLY a valid JSON array of objects. No markdown formatting.
             """
             
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
             # Clean up potential markdown formatting in response
             response_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
             
