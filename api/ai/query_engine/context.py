@@ -1,10 +1,7 @@
 import json
 from typing import Dict, Any
-import google.generativeai as genai
+from google import genai
 from api.core.config import settings
-
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
 
 class DossierQueryEngine:
     """Contextual query interface for interacting with intelligence dossiers using Gemini."""
@@ -24,7 +21,7 @@ class DossierQueryEngine:
             }
 
         try:
-            model = genai.GenerativeModel(self.model_name)
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
             
             prompt = f"""
             You are a senior intelligence analyst for Nexra.
@@ -39,11 +36,14 @@ class DossierQueryEngine:
             {json.dumps(context, indent=2)}
             """
             
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
             response_text = response.text.strip()
             
             # Note: Token counting is approximated or handled via metadata if available
-            tokens = model.count_tokens(prompt).total_tokens if hasattr(model, 'count_tokens') else 0
+            tokens = 0
             
             return {
                 "query": query,

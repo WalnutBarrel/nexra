@@ -2,15 +2,12 @@ import logging
 import json
 import time
 from typing import Dict, Any
-import google.generativeai as genai
+from google import genai
 from api.core.config import settings
 
 from api.website_scanner.fetchers.http import website_fetcher_service
 from api.website_scanner.detectors.tech import tech_detector_service
 from api.website_scanner.analyzers.intelligence import seo_analyzer, security_analyzer, performance_analyzer
-
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +19,7 @@ class DossierCompiler:
             return "Infrastructure scanning active. Operational telemetry synthesis degraded due to missing AI module."
         
         try:
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
             tech_names = [t["name"] for t in tech_stack]
             prompt = f"""
             You are a senior cybersecurity and infrastructure analyst. Write a highly concise, 1-sentence intelligence narrative summarizing the infrastructure of {domain}.
@@ -35,7 +32,10 @@ class DossierCompiler:
             Example: 'Meta-operated social platform leveraging React-based frontend infrastructure with globally distributed CDN delivery and hardened HTTPS enforcement.'
             Do NOT use marketing speak. Be analytical and dense. Do NOT use generic AI filler.
             """
-            res = model.generate_content(prompt)
+            res = client.models.generate_content(
+                model="gemini-1.5-flash-latest",
+                contents=prompt
+            )
             return res.text.strip()
         except Exception as e:
             logger.error(f"Failed to generate narrative: {e}")

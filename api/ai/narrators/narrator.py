@@ -1,10 +1,7 @@
 import json
 from typing import Dict, Any
-import google.generativeai as genai
+from google import genai
 from api.core.config import settings
-
-if settings.GEMINI_API_KEY:
-    genai.configure(api_key=settings.GEMINI_API_KEY)
 
 class IntelligenceNarrator:
     """Generates analytical, concise narrative blocks for dossiers using Gemini."""
@@ -17,7 +14,7 @@ class IntelligenceNarrator:
             return "Error: GEMINI_API_KEY is not configured in the environment."
             
         try:
-            model = genai.GenerativeModel(self.model_name)
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
             
             prompt = f"""
             You are a senior intelligence analyst for Nexra.
@@ -30,7 +27,10 @@ class IntelligenceNarrator:
             
             # Using run_in_executor or async if supported natively, but we'll use synchronous generate_content as an async wrapper logic.
             # For simplicity in this structure:
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
             return response.text.strip()
             
         except Exception as e:
@@ -41,9 +41,12 @@ class IntelligenceNarrator:
             return "Security posture indicates perimeter hardening via HSTS, but internal header leakage exposes CDN topology."
             
         try:
-            model = genai.GenerativeModel(self.model_name)
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
             prompt = f"Summarize the security posture based on this data. Be highly analytical, brief (1-2 sentences), and professional. Data: {json.dumps(security_data)}"
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
             return response.text.strip()
         except Exception as e:
             return f"Security synthesis failed: {str(e)}"
