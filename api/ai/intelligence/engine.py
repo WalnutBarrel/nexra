@@ -159,45 +159,69 @@ class EntityIntelligenceEngine:
             
             dominant_sentiment = max(set(sentiments), key=sentiments.count) if sentiments else None
             
-            # Velocity Calculation: (Mention Count * 2) + (Unique Sources * 5)
-            velocity = (mention_count * 2) + (unique_sources * 5)
+            from api.ai.intelligence.credibility.scoring import credibility_scorer
             
-            # Heavy boost for GitHub trending presence
-            if has_github:
-                velocity += 20 + (github_stars // 1000)
+            # Delegate to credibility scorer
+            velocity, cred_score, signal_quality = credibility_scorer.calculate_weighted_velocity(
+                mentions=recent_mentions,
+                github_stars=github_stars,
+                reddit_score=reddit_score,
+                reddit_comments=reddit_comments
+            )
+            
+            # Noise Suppression: Drop entities with extremely low credibility and low volume
+            if cred_score < 40.0 and mention_count < 3:
+                continue
                 
-            # Boost for Reddit engagement
-            if has_reddit:
-                velocity += 10 + (reddit_comments // 10) + (reddit_score // 50)
-                
-            velocity = min(100, velocity)
+            # Fetch temporal history from DB
+            history = await persistence_layer.get_historical_deltas(name)
+            
+            from api.ai.intelligence.divergence.scoring import divergence_scorer
+            divergence_markers = divergence_scorer.detect_divergence(
+                velocity=velocity,
+                credibility_score=cred_score,
+                mention_count=mention_count,
+                unique_sources=unique_sources,
+                has_github=has_github,
+                github_stars=github_stars,
+                dominant_sentiment=dominant_sentiment,
+                lifecycle_state=history.get("lifecycle_state"),
+                delta_24h=history.get("delta_24h")
+            )
             
             # Relationships for this entity
             entity_rels = [r for r in self.relationship_memory if r["entity_a"] == name.lower() or r["entity_b"] == name.lower()]
             
-            # Group by connected entity
-            connected_entities = {}
-            for r in entity_rels:
-                other = r["entity_b"] if r["entity_a"] == name.lower() else r["entity_a"]
-                if other not in connected_entities:
-                    connected_entities[other] = []
-                connected_entities[other].append(r)
-                
+            # Confidence threshold >= 0.5
             high_confidence_rels = []
-            for other, occurrences in connected_entities.items():
-                conf = relationship_scorer.calculate_confidence(occurrences)
-                if conf >= 0.5:
+            for r in entity_rels:
+                if r.get("confidence_score", 0) >= 0.5:
+                    # Get the other entity
+                    other_entity = r["entity_b"] if r["entity_a"] == name.lower() else r["entity_a"]
                     high_confidence_rels.append({
-                        "entity": other.title(),
-                        "type": occurrences[0]["relationship_type"],
-                        "confidence": conf
+                        "entity": other_entity,
+                        "type": r["relationship_type"],
+                        "confidence": r["confidence_score"]
                     })
             
             # Classify ecosystem
-            ecosystem = ecosystem_classifier.classify_ecosystem(name, entity_rels)
+            ecosystem = self.ecosystem_classifier.classify(name, [r["entity"] for r in high_confidence_rels])
             
-            # Fetch temporal history from DB
-            history = await persistence_layer.get_historical_deltas(name)
+            from api.ai.intelligence.explainability.reasoning import explainability_engine
+            evidence_basis = explainability_engine.generate_evidence_basis(
+                velocity=velocity,
+                credibility_score=cred_score,
+                signal_quality=signal_quality,
+                unique_sources=unique_sources,
+                has_github=has_github,
+                github_stars=github_stars,
+                has_reddit=has_reddit,
+                dominant_sentiment=dominant_sentiment,
+                lifecycle_state=history.get("lifecycle_state"),
+                delta_24h=history.get("delta_24h"),
+                delta_7d=history.get("delta_7d"),
+                divergence_markers=divergence_markers
+            )
             
             results.append({
                 "name": name,
@@ -206,6 +230,8 @@ class EntityIntelligenceEngine:
                 "mentions": mention_count,
                 "sources": unique_sources,
                 "velocity": velocity,
+                "credibility_score": cred_score,
+                "signal_quality": signal_quality,
                 "has_github": has_github,
                 "github_stars": github_stars,
                 "has_reddit": has_reddit,
@@ -214,6 +240,8 @@ class EntityIntelligenceEngine:
                 "delta_24h": history.get("delta_24h"),
                 "delta_7d": history.get("delta_7d"),
                 "lifecycle_state": history.get("lifecycle_state"),
+                "divergence_markers": divergence_markers,
+                "evidence_basis": evidence_basis,
                 "relationships": high_confidence_rels[:3] # Top 3
             })
             

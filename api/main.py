@@ -23,10 +23,23 @@ async def lifespan(app: FastAPI):
     from api.models.entity_snapshot import EntitySnapshot
     from api.models.relationship import EntityRelationship
     
+    import logging
+    logger = logging.getLogger(__name__)
+    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables verified.")
         
+    logger.info("Scheduler initialized.")
     scheduler.start()
+    logger.info("Snapshot persistence job registered.")
+    
+    # 7. Force Snapshot Execution On Startup
+    from api.scrapers.schedulers.tasks import snapshot_persistence_job
+    import asyncio
+    logger.info("Executing snapshot persistence job on startup...")
+    asyncio.create_task(snapshot_persistence_job())
+    
     yield
     # Shutdown
     scheduler.shutdown()

@@ -17,6 +17,10 @@ interface TrendIntelligenceCardProps {
   delta_24h?: number;
   delta_7d?: number;
   lifecycle_state?: string;
+  credibility_score?: number;
+  signal_quality?: string;
+  divergence_markers?: string[];
+  evidence_basis?: string[];
   relationships?: Array<{
     entity: string;
     type: string;
@@ -30,6 +34,10 @@ export function TrendIntelligenceCard({
   ecosystem,
   trend,
   score,
+  credibility_score,
+  signal_quality,
+  divergence_markers,
+  evidence_basis,
   sources,
   mentions,
   narrative,
@@ -73,6 +81,15 @@ export function TrendIntelligenceCard({
                 {lifecycle_state}
               </div>
             )}
+            {signal_quality && (
+              <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] uppercase font-mono tracking-widest ${
+                signal_quality === 'High' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
+                signal_quality === 'Medium' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+                'bg-white/5 border-white/10 text-muted-foreground/80'
+              }`}>
+                Signal: {signal_quality}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -87,6 +104,11 @@ export function TrendIntelligenceCard({
               <Sparkles className="w-3 h-3 text-amber-400/80" />
               {dominant_sentiment}
             </div>
+          )}
+          {credibility_score !== undefined && (
+             <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 border border-white/10 text-[10px] uppercase font-mono tracking-widest text-foreground/80">
+               Credibility: {Math.round(credibility_score)}
+             </div>
           )}
           <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-accent/5 border border-accent/20 text-[10px] uppercase font-mono tracking-widest text-accent/80">
             <Zap className="w-3 h-3" />
@@ -110,7 +132,7 @@ export function TrendIntelligenceCard({
 
       {/* Relationship Telemetry */}
       {relationships && relationships.length > 0 && (
-        <div className="mb-6 flex flex-wrap items-center gap-2 text-xs font-mono">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-mono">
           <span className="text-muted-foreground/60 uppercase tracking-widest text-[9px] mr-1">Correlations:</span>
           {relationships.map((rel, i) => (
             <div key={i} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/40 border border-white/5 text-foreground/70">
@@ -118,6 +140,32 @@ export function TrendIntelligenceCard({
               <span className="text-accent/80 font-semibold">{rel.entity}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Divergence Markers */}
+      {divergence_markers && divergence_markers.length > 0 && (
+        <div className="mb-4 flex flex-col gap-1.5 border-l-2 border-amber-500/30 pl-3">
+          {divergence_markers.map((marker, i) => (
+            <div key={i} className="text-[10px] uppercase font-mono tracking-widest text-amber-500/70">
+              [DIVERGENCE] {marker}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Evidence Basis */}
+      {evidence_basis && evidence_basis.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[10px] uppercase font-mono tracking-widest text-muted-foreground/50 mb-2">Evidence Basis:</div>
+          <ul className="space-y-1.5 border-l border-white/5 pl-3">
+            {evidence_basis.map((evidence, i) => (
+              <li key={i} className="text-[11px] text-muted-foreground/70 font-mono flex items-start">
+                <span className="text-accent/50 mr-2 text-[10px] mt-0.5">{'>'}</span>
+                {evidence}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

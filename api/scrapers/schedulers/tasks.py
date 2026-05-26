@@ -19,12 +19,20 @@ async def periodic_ingestion_job():
 @scheduler.scheduled_job('interval', hours=1)
 async def snapshot_persistence_job():
     """Persist the current entity hot-cache to PostgreSQL every hour."""
+    logger.info("Executing snapshot persistence job...")
     try:
         # get_ranked_entities without limit to get all active entities
         entities = await entity_engine.get_ranked_entities(limit=100)
+        logger.info(f"Retrieved {len(entities)} entities from hot-cache for persistence.")
         relationships = entity_engine.relationship_memory
-        await persistence_layer.save_snapshots(entities, relationships)
-        logger.info(f"Snapshot persistence job complete: saved {len(entities)} entities.")
+        logger.info(f"Retrieved {len(relationships)} raw relationships from hot-cache for persistence.")
+        
+        from api.ai.intelligence.persistence.commits import persistence_committer
+        success = await persistence_committer.commit_intelligence(entities, relationships)
+        if success:
+            logger.info(f"Snapshot persistence job complete: saved {len(entities)} entities.")
+        else:
+            logger.warning("Snapshot persistence job returned false (no entities or error).")
     except Exception as e:
         logger.error(f"Snapshot persistence job failed: {e}")
 

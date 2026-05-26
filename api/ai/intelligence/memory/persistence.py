@@ -67,8 +67,9 @@ class PersistenceLayer:
 
     async def get_historical_deltas(self, entity_name: str) -> Dict[str, Any]:
         """Calculates 24h and 7d deltas by querying recent snapshots."""
+        from api.database.session import AsyncSessionLocal
         try:
-            async for session in get_db():
+            async with AsyncSessionLocal() as session:
                 # Get the most recent snapshot
                 stmt_current = select(EntitySnapshot).where(EntitySnapshot.entity_name == entity_name).order_by(desc(EntitySnapshot.timestamp)).limit(1)
                 res_current = await session.execute(stmt_current)

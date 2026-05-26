@@ -33,6 +33,9 @@ class TrendEngine:
             If an entity has 'has_reddit' set to true, you MUST cite its 'dominant_sentiment' (e.g., excitement, skepticism) and 'discussion_intensity' to describe ecosystem realism.
             If an entity has 'lifecycle_state' and deltas, you MUST incorporate this temporal intelligence into the narrative (e.g. "Momentum accelerated 340% over the past 24 hours", "Stabilizing after rapid growth").
             If an entity has 'ecosystem' or 'relationships', explicitly contextualize it within its ecosystem (e.g. "Acceleration observed across the AI IDE ecosystem surrounding Cursor, Claude integration...").
+            If an entity has 'signal_quality', use it to frame the narrative: if High, describe verified momentum; if Low, note weak cross-source confirmation.
+            If an entity has 'divergence_markers', the narrative MUST reflect the conflict analytically (e.g. "Developer adoption signals remain strong despite rising ecosystem skepticism"). Do not use dramatic or alarmist language.
+            If an entity has an 'evidence_basis' array, you MUST ground your 1-sentence narrative directly in the provided evidence.
             
             Entity Telemetry:
             {json.dumps(entities)}
@@ -43,6 +46,8 @@ class TrendEngine:
             - ecosystem (string, matching the ecosystem)
             - trend (string: "up")
             - score (integer, matching velocity)
+            - credibility_score (float, matching credibility_score)
+            - signal_quality (string, matching signal_quality)
             - sources (integer, matching sources)
             - mentions (integer, matching mentions)
             - narrative (string, your 1-sentence synthesis)
@@ -54,6 +59,8 @@ class TrendEngine:
             - delta_24h (float, matching delta_24h)
             - delta_7d (float, matching delta_7d)
             - lifecycle_state (string, matching lifecycle_state)
+            - divergence_markers (list of strings, matching divergence_markers)
+            - evidence_basis (list of strings, matching evidence_basis)
             - relationships (list of objects, matching relationships)
             """
             
@@ -73,6 +80,8 @@ class TrendEngine:
                     "ecosystem": e.get("ecosystem"),
                     "trend": "up",
                     "score": e["velocity"],
+                    "credibility_score": e.get("credibility_score", 0),
+                    "signal_quality": e.get("signal_quality", "Low"),
                     "sources": e["sources"],
                     "mentions": e["mentions"],
                     "narrative": "Empirical entity telemetry captured. AI synthesis unavailable.",
@@ -84,6 +93,8 @@ class TrendEngine:
                     "delta_24h": e.get("delta_24h", None),
                     "delta_7d": e.get("delta_7d", None),
                     "lifecycle_state": e.get("lifecycle_state", None),
+                    "divergence_markers": e.get("divergence_markers", []),
+                    "evidence_basis": e.get("evidence_basis", []),
                     "relationships": e.get("relationships", [])
                 })
             return fallback if fallback else self.mock_trends
