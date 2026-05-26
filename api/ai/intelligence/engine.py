@@ -205,7 +205,7 @@ class EntityIntelligenceEngine:
                     })
             
             # Classify ecosystem
-            ecosystem = ecosystem_classifier.classify(name, [r["entity"] for r in high_confidence_rels])
+            ecosystem = ecosystem_classifier.classify_ecosystem(name, entity_rels)
             
             from api.ai.intelligence.explainability.reasoning import explainability_engine
             evidence_basis = explainability_engine.generate_evidence_basis(
