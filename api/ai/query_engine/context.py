@@ -7,7 +7,7 @@ class DossierQueryEngine:
     """Contextual query interface for interacting with intelligence dossiers using Gemini."""
 
     def __init__(self):
-        self.model_name = "gemini-1.5-flash"
+        self.model_name = "gemini-2.5-flash"
 
     async def execute_query(self, query: str, context: Dict[str, Any]) -> Dict[str, str]:
         """Process a natural language query against a dossier context."""

@@ -33,7 +33,7 @@ class DossierCompiler:
             Do NOT use marketing speak. Be analytical and dense. Do NOT use generic AI filler.
             """
             res = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-2.5-flash",
                 contents=prompt
             )
             return res.text.strip()

@@ -8,7 +8,7 @@ class EntityIntelligenceEngine:
     """Manages empirical entity tracking, mention growth, and correlation."""
     
     def __init__(self):
-        self.model_name = "gemini-1.5-flash"
+        self.model_name = "gemini-2.5-flash"
         # In-memory storage: { "Cursor": { "mentions": [ { "timestamp": float, "source": str } ], "category": "AI Tooling" } }
         self.entity_memory: Dict[str, Dict[str, Any]] = {}
         self.relationship_memory: List[Dict[str, Any]] = []

@@ -7,7 +7,7 @@ class IntelligenceNarrator:
     """Generates analytical, concise narrative blocks for dossiers using Gemini."""
 
     def __init__(self):
-        self.model_name = "gemini-1.5-flash"
+        self.model_name = "gemini-2.5-flash"
 
     async def generate_dossier_narrative(self, raw_data: Dict[str, Any]) -> str:
         if not settings.GEMINI_API_KEY:

@@ -7,7 +7,7 @@ class IntelligenceSynthesizer:
     """Uses AI to enrich raw news items with sentiment and executive summaries."""
     
     def __init__(self):
-        self.model_name = "gemini-1.5-flash"
+        self.model_name = "gemini-2.5-flash"
         
     def synthesize_batch(self, articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Processes a batch of articles and adds AI metadata."""
