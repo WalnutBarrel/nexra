@@ -25,5 +25,5 @@ async def get_trending_topics():
     if not recent_articles:
         recent_articles = await orchestrator.ingest_live_feeds()
         
-    trends = trend_engine.compute_trends(recent_articles)
+    trends = await trend_engine.compute_trends(recent_articles)
     return {"data": trends}
