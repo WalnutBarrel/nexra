@@ -8,7 +8,7 @@ class TrendEngine:
     """Analyzes streams of articles to detect accelerating topics."""
     
     def __init__(self):
-        self.model_name = "gemini-1.5-flash-latest"
+        self.model_name = "gemini-1.5-flash"
         self.mock_trends = [
             {"topic": "Autonomous Agents", "category": "AI Research", "trend": "up", "score": 95, "sources": 3, "mentions": 12, "narrative": "Empirical velocity indicates strong acceleration in autonomous capabilities."},
         ]
